@@ -1,10 +1,15 @@
 import Data.List
+import Data.Function
+import Control.Monad
+import Debug.Trace
 import qualified Data.Map as M
+
 
 data Carta = Carta Int Int
 	deriving Eq
 
-data Jogador = Jogador String Int
+data Jogador = Jogador String
+	deriving (Eq, Ord, Show)
 
 checaManilha j (Carta f _ ) = case manilha j of
 	Carta 3 _  -> f == 4
@@ -49,14 +54,48 @@ data Jogo = Jogo { manilha   :: Carta
 		 , rodadas   :: [[(Carta, Jogador)]]
 		 }
 
+pontuaRodada :: Jogo -> M.Map Jogador Int -> [(Carta,Jogador)] -> M.Map Jogador Int
 pontuaRodada j p r = case vencedorRodada j r of
 	Nothing -> p
-	Just v -> M.adjust (-1) v p
+	Just v -> M.adjust (+(-1)) v p
 
-pontuaJogo j p rs = foldl (pontuaJogo j) p rs
+pontuaJogo :: Jogo -> M.Map Jogador Int
+pontuaJogo j = foldl (pontuaRodada j) (jogadores j) (rodadas j)
 
+
+
+pontuacaoFinal j = vencedorJogo $ M.toList (pontuaJogo j)
+
+
+vencedorJogo vs = 
+	let l = sortBy (compare `on` snd) $ map (\(a, b) -> (a, abs b)) vs 
+	in case l of -- traceShow l l of
+		[] -> Nothing
+		[v] -> Just $ fst v
+		(a:b:_) -> if snd a < snd b then Just $ fst a else Nothing
+
+mostraVencedor Nothing = "*"
+mostraVencedor (Just (Jogador j)) = j
 
 readCarta :: String -> Carta
 readCarta [a, b] = Carta (readNumero a) (readNaipe b)
 
-main = putStrLn "ok"
+readInt :: String -> Int
+readInt = read
+
+getJogador = do [j, c] <- liftM words getLine
+		return $ (Jogador j, readInt c)
+
+getRodada :: [Jogador] -> IO [(Carta, Jogador)]
+getRodada js = do rs <- liftM words getLine
+		  return $ zip (map readCarta rs) js
+
+main = do [nrI, manI] <- liftM words getLine
+	  let nr = readInt nrI
+	  let man = readCarta manI
+	  js <- replicateM 4 getJogador
+	  rs <- replicateM nr (getRodada $ map fst js)
+	  let j = Jogo man (M.fromList js) rs
+	  putStrLn $ mostraVencedor $ pontuacaoFinal j
+	  
+	  
