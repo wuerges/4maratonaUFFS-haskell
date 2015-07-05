@@ -44,15 +44,16 @@ readNaipe n = case n of
 	'H' -> 2
 	'C' -> 1
 
-data Jogo = Jogo { nRodadas  :: Int
-		 , manilha   :: Carta 
+data Jogo = Jogo { manilha   :: Carta 
 		 , jogadores :: M.Map Jogador Int
 		 , rodadas   :: [[(Carta, Jogador)]]
 		 }
 
+pontuaRodada j p r = case vencedorRodada j r of
+	Nothing -> p
+	Just v -> M.adjust (-1) v p
 
-maior1 m [] = []
-
+pontuaJogo j p rs = foldl (pontuaJogo j) p rs
 
 
 readCarta :: String -> Carta
