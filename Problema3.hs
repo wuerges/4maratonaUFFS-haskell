@@ -4,10 +4,10 @@ import Control.Monad
 
 mpf = 1000000007 :: Int
 
-modProduct m [] = 1
-modProduct m (l:ls) = p'
-	where p = l * modProduct m ls
-	      p' = if p > m then p `rem` m else p
+modProduct2 m a b = if c > m then c `rem` m else c
+	where c = a * b
+
+modProduct m  = foldl (modProduct2 m) 1 
 
 combinacao a b = (modProduct mpf [x+1..a] `div` modProduct mpf [1..y]) - 1
 	where (x, y) = if (a - b) > b then (a - b, b)
